@@ -38,6 +38,7 @@ io.on('connect', (socket) => {
     callback();
   });
 
+
   socket.on('disconnect', () => {
     const user = removeUser(socket.id);
 
@@ -46,6 +47,21 @@ io.on('connect', (socket) => {
       io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room)});
     }
   })
+});
+io.on("connection", (socket) => {
+  socket.emit("me", socket.id);
+
+  socket.on("disconnect", () => {
+    socket.broadcast.emit("callEnded");
+  });
+
+  socket.on("callUser", ({ userToCall, signalData, from, name }) => {
+    io.to(userToCall).emit("callUser", { signal: signalData, from, name });
+  });
+
+  socket.on("answerCall", (data) => {
+    io.to(data.to).emit("callAccepted", data.signal);
+  });
 });
 
 server.listen(process.env.PORT || 5000, () => console.log(`Server has started.`));
